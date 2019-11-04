@@ -27,13 +27,19 @@ class TestButton extends React.Component {
             })
             .catch(error => console.log(error)
             );
+            this.setState({
+                runTest: true
+            });
         } else if (c === testStates.TEST_KILL) {
             const url = this.props.endpoint + '/test-kill';
             fetch(url, {
                 method: 'GET'
             })
             .catch(error => console.log(error)
-            );   
+            );  
+            this.setState({
+                runTest: false
+            }); 
         }
     }
 
@@ -56,11 +62,13 @@ class TestButton extends React.Component {
                     onMouseDown={() => this.triggerTest(testStates.TEST_START)}
                     onMouseUp={() => this.triggerTest(testStates.TEST_KILL)}
                     className="inputbtn">
-                    Test
+                    { !this.state.runTest ? (
+                        <span>Press + hold to test</span>
+                    ) : (
+                        <span>Release to end</span>
+                    )}
+                    
                 </button>
-                <div className="test-info">
-                    <p>Press and hold the test button to hear the music and see the light</p>
-                </div>
             </>
         )
     }
