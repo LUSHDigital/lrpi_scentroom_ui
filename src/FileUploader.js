@@ -34,46 +34,37 @@ class FileUploader extends React.Component {
         const data = new FormData()
         data.append('file', this.state.selectedFile)
         data.append('colour', this.state.selectedCol)
-        
-        //Upload methods return boolean success/fail
-        let fileresponse = this.uploadFile(data)
-        let colresponse = this.uploadCol(data)
-
-        //Calls notification component manager
-        if(fileresponse && colresponse) {
-            console.log("Response from notification manager: ", fileresponse, colresponse)
-            this.notificationManager("Upload success")
-        } else if (!fileresponse && !colresponse) {
-            console.log("Response from notification manager: ", fileresponse, colresponse)
-            this.notificationManager("Error: Failed to upload audio file")
-        } else if (!fileresponse && colresponse) {
-            this.notificationManager("Error: Failed to upload colour")
-        } else if (!fileresponse && !colresponse) {
-            this.notificationManager("Error: Upload failed")
-        }
+        this.notificationManager("Loading.. await response")
+        this.submitData(data)
     }
 
     distanceHandlerActive = () => {
         //Run temp test for distance sensor active
-        if (this.endpointRequest(true)){
-            this.notificationManager("Success: Activated")
-        } else {
-            this.notificationManager("Error: Could not activate")
-        }
+        this.notificationManager("Test request activated")
+        this.runTest(true)
     }
 
     distanceHandlerDeactive = () => {
         //Run temp test for distance sensor deactive
-        if (this.endpointRequest(false)){
-            this.notificationManager("Success: Deactivated")
-        } else {
-            this.notificationManager("Error: Could not deactivate")
-        }
+        this.notificationManager("Test request deactivated")
+        this.runTest(false)
+    }
+
+    //Manage end point requests responses
+    runTest = (data) => {
+        this.endPointRequest(data).then((res) => {
+            if(res === 200) {
+                this.notificationManager("Test success")
+            } else {
+                this.notificationManager("Test failed")
+            }
+        }).catch(e => {
+            this.notificationManager("Error: Test failed ", e.message)
+        });
     }
 
     //End point requests for dummy distance sensor
-    endpointRequest = async (state) => {
-        
+    endPointRequest = async (state) => {
         var url = ''
         if(state){
             url = 'http://192.168.0.56:5000/start-test'
@@ -81,44 +72,55 @@ class FileUploader extends React.Component {
             url = 'http://192.168.0.56:5000/test-kill'
         } 
         if(url !== '') {
-            const response = await fetch(url, {
+            let response = await fetch(url, {
                 headers: {'Content-Type': 'application/json'}
             })
-            if(response != null && response.response === 200) {
-                return true
-            } 
+            return await response.response
         }
-        return false
+        return null
     }
     
+    //Manage request response handlers
+    submitData = (data) => {
+        this.uploadFile(data).then((file_res) => {
+            this.uploadCol(data).then((col_res) => {
+                if(file_res === 200 && col_res === 200) {
+                    this.notificationManager("Upload success")
+                } else if (file_res === 200 && col_res !== 200) {
+                    this.notificationManager("Error: Colour upload failed")
+                } else if (file_res !== 200 && col_res === 200) {
+                    this.notificationManager("Error: File upload failed")
+                } else {
+                    this.notificationManager("Error: Upload failed")
+                }
+            }).catch(e => {
+                this.notificationManager("Error: Colour upload failed ", e.message)
+            });
+        }).catch(e => {
+            this.notificationManager("Error: File upload failed ", e.message)
+        });
+    }
 
-    //POST file input form data
+    //POST: uploads audio file to server
     uploadFile = async (data) => {
         //const url = API_URL + '/upload-file'
         let url = 'http://192.168.0.56:5000/uploadfile'
-        const response = await fetch(url, {
+        let response = await fetch(url, {
             method: 'POST',
             body: data,
         })
-        if(response != null && response.response === 200){
-            return true
-        }
-        return false
+        return await response.response
     }
 
-
-    //POST col value form data
+    //POST: uploads col to server
     uploadCol = async (selectedCol) => {
         //const url = API_URL + '/upload-colour';
         let url = 'http://192.168.0.56:5000/uploadcol';
-        const response = await fetch(url, {
+        let response = await fetch(url, {
             method: 'POST',
             body: selectedCol,
         })
-        if(response != null && response.response === 200){
-            return true
-        }
-        return false
+        return await response.response
     }
 
     //Inits timed notification component with message param

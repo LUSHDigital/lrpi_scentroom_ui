@@ -25,9 +25,9 @@ export class Notification extends PureComponent {
         isActive: false,
         message: ''
       });
-    }, 8000);
-  }  
-
+    }, 10000);
+  }
+  
   render() {
     if(this.state.isActive) {
       return (
